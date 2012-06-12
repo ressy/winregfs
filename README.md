@@ -39,6 +39,20 @@ very simple.  For example:
     drwxr-xr-x 2 jesse jesse 0 May 19  2011 Software
     drwxr-xr-x 2 jesse jesse 0 May 19  2011 System
 
+I've tried to keep it tidy so it plays nice when imported as a Python module,
+too:
+
+    >>> from winregfs import WinRegFS
+    >>> fs = WinRegFS()
+    >>> fs.setup('NTUSER.DAT', 'mountpoint/')
+    >>> fs.mount()
+    >>> fs.mounted
+    True
+    >>> fs.unmount()
+    >>> fs.mounted
+    False
+
+
 Limitations
 -----------
 
