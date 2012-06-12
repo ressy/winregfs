@@ -25,20 +25,27 @@ sys.path.insert(0, _fullpath('python-registry'))
 sys.path.insert(0, _fullpath('fusepy'))
 try:
     from Registry import Registry # python-registry -- Will Ballenthin
-except ImportError:
-    print('Error: python-registry not found.  Get it here:')
-    print('http://github.com/williballenthin/python-registry/')
-    print('and put it next to winregfs.py in a python-registry/ directory.')
-    sys.exit(1)
+except ImportError as ex:
+    if __name__ == '__main__':
+        print('Error: python-registry not found.  Get it here:')
+        print('http://github.com/williballenthin/python-registry/')
+        print('and put it next to winregfs.py in a python-registry/ directory.')
+        sys.exit(1)
+    else:
+        raise(ex)
 try:
     import fuse # fusepy -- the module by Terence Honles, not fuse-python
     if hasattr(fuse, 'FUSE_PYTHON_API_VERSION'):
-        raise ImportError # oops, we got fuse-python.  Wrong module.
-except ImportError:
-    print('Error: fusepy not found.  Get it here:')
-    print('http://github.com/terencehonles/fusepy')
-    print('and put it next to winregfs.py in a fusepy/ directory.')
-    sys.exit(1)
+        # oops, we got fuse-python.  Wrong module.
+        raise ImportError("fusepy expected, but imported fuse-python instead.")
+except ImportError as ex:
+    if __name__ == '__main__':
+        print('Error: fusepy not found.  Get it here:')
+        print('http://github.com/terencehonles/fusepy')
+        print('and put it next to winregfs.py in a fusepy/ directory.')
+        sys.exit(1)
+    else:
+        raise(ex)
 
 # Beta todo:
 #   xattr support (for exposing details like value data type)
