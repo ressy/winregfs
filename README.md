@@ -10,12 +10,13 @@ could at least do something extremely illogical :)
 Setup
 -----
 
-This little script depends heavily on two projects, so you'll need these too:
+This requires a working [FUSE](http://fuse.sourceforge.net/) installation,
+[Python](http://www.python.org/) 2.7, and these two other projects:
  * [fusepy](https://github.com/terencehonles/fusepy)
  * [python-registry](https://github.com/williballenthin/python-registry)
 
-It assumes they're stored in their own directories, under those names, alongside
-winregfs.py.
+If they're not installed globally, it assumes they're stored in their own
+directories, under those names, alongside winregfs.py. 
 
 Usage
 -----
