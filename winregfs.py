@@ -47,18 +47,6 @@ except ImportError as ex:
     else:
         raise(ex)
 
-# Beta todo:
-#   xattr support (for exposing details like value data type)
-#   consider unicode issues, if any
-#   write unit tests
-#
-#   make a convenience function to gather up multiple files from a Windows
-#       folder and mount them (check that python registry GUI for clues, maybe?)
-#       there's an old python filesystem library that wraps FUSE calls, too;
-#       check that out.
-#
-# pipe-dream todo:
-#   write access
 
 def reg_object_stat():
     """Set up a dictionary of file stat values with reasonable defaults"""
