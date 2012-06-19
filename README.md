@@ -11,7 +11,9 @@ Setup
 -----
 
 This requires a working [FUSE](http://fuse.sourceforge.net/) installation,
-[Python](http://www.python.org/) 2.7, and these two other projects:
+[Python](http://www.python.org/) 2.7 (or Python 2.6 with
+[argparse](http://pypi.python.org/pypi/argparse) installed), and these two other
+projects:
  * [fusepy](https://github.com/terencehonles/fusepy)
  * [python-registry](https://github.com/williballenthin/python-registry)
 
