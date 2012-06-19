@@ -52,6 +52,12 @@ too:
     >>> fs.mounted
     False
 
+Finally, if both dependencies are installed where Python can find them, a link
+from wherever winregfs.py is to /sbin/mount.winregfs will allow this usage:
+
+    mount -t winregfs NTUSER.DAT mountpoint/
+
+and also the corresponding usage in /etc/fstab, as with a "real" filesystem.
 
 Limitations
 -----------
