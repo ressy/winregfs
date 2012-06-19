@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-##!/ad/eng/support/software/linux/all/x86_64/python27/bin/python
 
 # usage: ./winregfs.py <hivefile> <mountpoint>
 # unmount with fusermount -u <mountpoint>
