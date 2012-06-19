@@ -52,8 +52,8 @@ too:
     >>> fs.mounted
     False
 
-Finally, if both dependencies are installed where Python can find them, a link
-from wherever winregfs.py is to /sbin/mount.winregfs will allow this usage:
+Finally, a link from wherever winregfs.py is to /sbin/mount.winregfs will allow
+this usage:
 
     mount -t winregfs NTUSER.DAT mountpoint/
 

@@ -20,7 +20,11 @@ import argparse
 # 
 # TODO I think I over-engineered this...
 def _fullpath(path):
-    return os.path.join(os.path.dirname(__file__), str(path))
+    try:
+        loc = os.readlink(__file__)
+    except OSError:
+        loc = __file__
+    return os.path.join(os.path.dirname(loc), str(path))
 sys.path.insert(0, _fullpath('python-registry'))
 sys.path.insert(0, _fullpath('fusepy'))
 try:
