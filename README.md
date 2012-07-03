@@ -20,6 +20,12 @@ projects:
 If they're not installed globally, it assumes they're stored in their own
 directories, under those names, alongside winregfs.py. 
 
+Tested (briefly) on:
+
+ * CentOS 5 with Python 2.6 and 2.7
+ * Gentoo with Python 2.7
+ * Mac OS 10.7 with Python 2.7 (Using [OSXFUSE](http://osxfuse.github.com/))
+
 Usage
 -----
 
