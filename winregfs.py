@@ -289,8 +289,7 @@ class WinRegFS(fuse.Operations):
     #
     # About FS Write methods:
     # fusepy sets write operations to raise EROFS (error: read-only filesystem)
-    # for write operations and ENOTSUP (error: not supported) for xattr
-    # operations, which makes perfect sense here, so no changes are needed.
+    # for write operations, so no changes are needed.
 
     def getattr(self, path, fh=None):
         """Return a dict of file attributes for the given file/directory."""
@@ -340,6 +339,56 @@ class WinRegFS(fuse.Operations):
             value = self.get_value(path)
             data = self.value_to_bytes(value)
             return data[offset:offset+size]
+
+    # FS Extended Attribute Methods
+    # getxattr() and listattr() are all that are needed here.  Leaving out
+    # setxattr() works since fusepy's defaults do the trick.
+
+    # Mapping of names <-> methods to call for reading extended attributes.
+    # These little methods each take a RegistryValue and return a string,
+    # and XATTRS below maps an xattr name to each method.  (This way the xattr
+    # methods don't have to each know about the details.)
+
+    def get_value_str(val):
+        """Return the string representation of the type of the given RegistryValue."""
+        return val.value_type_str()
+
+    def get_is_text(val):
+        """Return "True" if the given RegistryValue would be shown as text, "False" otherwise."""
+        return str(val.value_type() in WinRegFS.TEXT_TYPES)
+
+    XATTRS = {}
+    XATTRS["user.registry.datatype"] = get_value_str
+    XATTRS["user.registry.text"]     = get_is_text
+
+    # TODO: what's position?
+    def getxattr(self, path, name, position=0):
+        """Return the requested attribute for the given path."""
+        try:
+            key = self.reg.open(self.path_to_regpath(path))
+        except Registry.RegistryKeyNotFoundException:
+            val = self.get_value(path)
+            try:
+                return WinRegFS.XATTRS[name](val)
+            except KeyError:
+                #return ""
+                pass # raises exception below
+        #return ""
+        raise fuse.FuseOSError(errno.ENOATTR)
+
+    def listxattr(self, path):
+        """Return a list of extended attributes available for the given path.
+        
+        Currently there are no xattrs for directories, so an empty list is given
+        for those cases.  Files support a datatype attribute and a text (boolean
+        flag for non-binary data) attribute."""
+        # Key:   Fall through to returning an empty list
+        # Value: Return all supported xattrs
+        try:
+            key = self.reg.open(self.path_to_regpath(path))
+        except Registry.RegistryKeyNotFoundException:
+            return WinRegFS.XATTRS.keys()
+        return []
 
 
 # All the command-line argument parsring code,
