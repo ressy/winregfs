@@ -73,7 +73,6 @@ Limitations
 To name a few:
  * read-only access
  * only modification times for directories (keys) are currently given
- * Types for values are given as file extensions right now (kinda ugly)
  * Certain registry data types aren't supported (more on this later)
  * Did I mention I've barely tested this?
 

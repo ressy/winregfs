@@ -404,7 +404,7 @@ mo_parser = argparse.ArgumentParser(add_help=False)
 mo_group = mo_parser.add_argument_group('Mount Options', 'Options affecting the mounted filesystem')
 mo_setup = {"type": str, "choices": ("yes", "no"), "default": "yes", "const": "yes", "nargs": "?"}
 mo_group.add_argument('-n', '--append-newline', help="append newlines to file data when appropriate (default: no)", **mo_setup)
-mo_group.add_argument('-e', '--append-extensions', help="append extensions to file names to match data types (default: yes)", **mo_setup)
+mo_group.add_argument('-e', '--append-extensions', help="append extensions to file names to match data types (default: yes).  Also available as an extended file attribute.", **mo_setup)
 
 # A list of fuse options I know of that can only be specified with -o.
 # I've never actually found a definitive list anywhere; this just came from the
