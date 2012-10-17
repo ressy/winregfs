@@ -1,8 +1,19 @@
 #!/usr/bin/env python
 
-# usage: ./winregfs.py <hivefile> <mountpoint>
-# unmount with fusermount -u <mountpoint>
-# ./winregfs.py --help for more information.
+"""
+Basic command-line usage:
+    ./winregfs.py <hivefile> <mountpoint>
+    unmount with fusermount -u <mountpoint>
+    ./winregfs.py --help for more detailed information.
+
+Quick overview of classes:
+    WinRegFS      Mounts the filesystem and accesses the registry
+    RegistryTree  All registry access functionality
+    MountOptions  Parses special command-line options
+
+See WinRegFS for the top-level filesystem methods.
+
+"""
 
 import os
 import sys
@@ -60,7 +71,6 @@ class RegistryTree():
     returned are of type RegistryKey or RegistryValue.
     
     """
-
     # These data types will be considered text, as far as conversion to bytes
     # goes.  For example, 84 will become "84", not "T" (84 as ASCII).
     TEXT_TYPES= [Registry.RegSZ, Registry.RegExpandSZ, Registry.RegMultiSZ,
@@ -248,17 +258,14 @@ class RegistryTree():
 
 
 class WinRegFS(fuse.Operations):
-    """Collection of filesystem operations for interfacing with the registry."""
+    """Collection of filesystem operations for interfacing with the registry.
+    
+    1. Create a WinRegFS() object
+    2. Call setup() to supply the hivefile, mountpoint, and optional settings
+    3. Call mount() to actually mount the filesystem
 
+    """
     def __init__(self):
-        """Create a new FS object.
-        
-        Nothing much is done here except for setting some defaults. After this,
-        call setup() to supply the hivefile, mountpoint, and optional settings,
-        and then mount() to actually mount the filesystem.
-        
-        """
-        # Options
         self.foreground = False # Stay in foreground when mounting FS?
         self.debug = False # Show debug output (implies foreground)?
 
@@ -494,15 +501,13 @@ FUSE_OPTIONS = ["allow_other", "allow_root", "nonempty", "default_permissions",
 
 
 class MountOptions(argparse.Action):
-    """Custom "action" for mountpoint options given as -o opt=value1,opt2,...
+    """Custom argparse.Action for mountpoint options given as -o opt=value1,opt2,..."""
     
-    This just reformats the arguments and parses them again with the mo_parser
-    settings and puts the results in the same namespace as the original
-    parser.  Options for FUSE itself are put in a dict (namespace.options) and
-    can then just be passed to FUSE directly.  But, that means no error checking
-    is done here for those, except that the options are recognized.
-
-    """
+    # This just reformats the arguments and parses them again with the mo_parser
+    # settings and puts the results in the same namespace as the original
+    # parser.  Options for FUSE itself are put in a dict (namespace.options) and
+    # can then just be passed to FUSE directly.  But, that means no error checking
+    # is done here for those, except that the options are recognized.
     def __call__(self, parser, namespace, values, option_string=None):
         args = []
         for option in values.split(','):
