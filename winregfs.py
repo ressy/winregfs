@@ -82,17 +82,63 @@ class RegistryTree():
         self.__loaded = False
 
     def load(self, registry):
-        """Load the given registry (either a single file or directory)."""
-        self.reg = Registry.Registry(registry)
+        """Load the given registry (either a single file or directory).
+        
+        If a directory is given, it's assumed to be a %WINDIR%\system32\config
+        directory with the contents of HKLM inside."""
+        # Registry Key       Filesystem Location (Win7)
+        # ----------------------------------------------------------------------
+        # HKCR               (Composite of \Software\Classes from HKCU and HKLM)
+        # HKCU               (Link to current user's key under HKU)
+        # HKLM\SAM           %WINDIR%\system32\config\SAM
+        # HKLM\SECURITY      %WINDIR%\system32\config\SECURITY
+        # HKLM\SOFTWARE      %WINDIR%\system32\config\software
+        # HKLM\SYSTEM        %WINDIR%\system32\config\system
+        # HKU\.DEFAULT       %WINDIR%\system32\config\default
+        # HKU\<SID>          %USERPROFILE%\NTUSER.DAT
+        # HKU\<SID>_Classes  %USERPROFILE%\AppData\Local\Microsoft\Windows\UsrClass.dat
+        # HKCC               (Generated dynamically at runtime)
+        self.registry = registry
+        self.hives= {}
+        self.hives["HKCR"] = {}
+        self.hives["HKCU"] = {}
+        self.hives["HKLM"] = {}
+        self.hives["HKU"]  = {}
+        self.hives["HKCC"] = {}
+        if os.path.isdir(registry):
+            self.multifile = True
+            # TODO only catch the correct exception
+            hklm = self.hives["HKLM"]
+            try:
+                self._load_regfile(hklm, "system")
+            except Exception:
+                raise ValueError("directory specified for registry, but system file couldn't be loaded.")
+            self._load_regfile(hklm, "SAM")
+            self._load_regfile(hklm, "SECURITY")
+            self._load_regfile(hklm, "software")
+        else:
+            self.multifile = False
+            self.reg = Registry.Registry(registry)
         self.__loaded = True
+
+    def _load_regfile(self, hkey, regname, strictload=False):
+        """Load a single registry file into the tree."""
+        path = os.path.join(self.registry, regname)
+        try:
+            hkey[regname.lower()] = Registry.Registry(path)
+        except Exception as ex:
+            if strictload:
+                raise ex
+            hkey[regname.lower()] = None
     
     def key(self, path_to_key):
         """Return the given key object."""
         # Raises Registry.RegistryKeyNotFoundException if it isn't there
         if not self.__loaded:
             raise ValueError("load() must be called first.")
+        reg, path_to_key = self._parse_reg(path_to_key)
         try:
-            key = self.reg.open(self._path_to_regpath(path_to_key))
+            key = reg.open(self._path_to_regpath(path_to_key))
         except RegistryParse.RegistryStructureDoesNotExist:
             raise ValueError("specified key does not exist.")
         return key
@@ -106,19 +152,35 @@ class RegistryTree():
         """
         if not self.__loaded:
             raise ValueError("load() must be called first")
+        reg, path_to_value = self._parse_reg(path_to_value)
         try:
-            self.reg.open(self._path_to_regpath(path_to_value)) # if this works...
+            reg.open(self._path_to_regpath(path_to_value))      # if this works...
             raise ValueError("specified value does not exist")  # then wait a minute, it's a key
         except RegistryParse.RegistryStructureDoesNotExist:
             pass # OK, it's not a key, at least
         key = self._path_to_regpath(os.path.dirname(path_to_value))       # get corresponding key from path
         val = self._filename_to_regvalue(os.path.basename(path_to_value)) # trim off value name from path
         try:
-            reg = self.reg.open(key) # open the containing key
-            value = reg.value(val)   # ... and extract the right value
+            keyobj = reg.open(key)    # open the containing key
+            value = keyobj.value(val) # ... and extract the right value
         except RegistryParse.RegistryStructureDoesNotExist:
             raise ValueError("specified value does not exist")
         return value
+
+    def _parse_reg(self, path):
+        """Return the registry object and subpath for the given global path."""
+        if self.multifile:
+            parts = path.strip('/').split('/', 2)
+            if len(parts) < 3:
+                raise ValueError("Can only extract objects under a specific hive.")
+            hkey, regkey, path = parts
+            try:
+                reg = self.hives[hkey][regkey]
+            except KeyError:
+                raise ValueError("specified item does not exist.")
+        else:
+            reg = self.reg
+        return reg, path
 
     def bytestr(self, path_to_value):
         """Return a byte string representation of the given value."""
@@ -187,8 +249,39 @@ class RegistryTree():
         """
         if not self.__loaded:
             raise ValueError("load() must be called first.")
+        # For multifile:
+        #   Case 1: /hivekey/registry/path
+        #   Case 2: /hivekey/registry
+        #   Case 3: /hivekey
+        #   Case 4: /
+        if self.multifile:
+            parts = path_to_key.strip('/').split('/', 2)
+            if len(parts) >= 3:
+                hkey, regkey, subpath = parts
+                try:
+                    reg = self.hives[hkey][regkey]
+                except KeyError:
+                    raise ValueError("specified key does not exist.")
+                return self._items_for_reg(reg, subpath)
+            if len(parts) == 2:
+                hkey, regkey = parts
+                subpath = '/'
+                try:
+                    reg = self.hives[hkey][regkey]
+                except KeyError:
+                    raise ValueError("specified key does not exist.")
+                return self._items_for_reg(reg, subpath) 
+            if len(parts) == 1 and parts[0]:
+                try:
+                    return self.hives[parts[0]].keys()
+                except KeyError:
+                    raise ValueError("specified key does not exist.")
+            return self.hives.keys()
+        return self._items_for_reg(self.reg, path_to_key)
+
+    def _items_for_reg(self, reg, path_to_key):
         try:
-            key = self.reg.open(self._path_to_regpath(path_to_key))
+            key = reg.open(self._path_to_regpath(path_to_key))
         except RegistryParse.RegistryStructureDoesNotExist:
             raise ValueError("specified key does not exist.")
         names = []
@@ -209,18 +302,24 @@ class RegistryTree():
         # Key (emulated directory)
         # If this works, we can just stick with the defaults for a directory
         try:
-            key = self.key(path)
+            items = self.items(path)
         # Otherwise, Value (emulate file)
         except ValueError:
             data = self.bytestr(path)
             st["st_mode"] = stat.S_IFREG | 0o644 # regular file, rw-r--r--
             st["st_nlink"] = 1 # just one hard link for our regular files
             st["st_size"] = len(data)
-        # Oh, and if it was a key, we can get the modification time.
-        # (This runaround is required to convert the datetime object into
-        # the integer FUSE expects.)
+        # Oh, and if it was a real key, we can get the modification time.
+        # (The runaround with the time functions is required to convert
+        # the datetime object into the integer FUSE expects.)  If it wasn't a
+        # real key (e.g., hivekey) just stick with the default.
         else:
-            st["st_mtime"] = time.mktime(key.timestamp().timetuple())
+            try:
+                key = self.key(path)
+            except ValueError:
+                pass
+            else:
+                st["st_mtime"] = time.mktime(key.timestamp().timetuple())
         return st
 
     # Some utilities
@@ -440,7 +539,7 @@ class WinRegFS(fuse.Operations):
         if hasattr(errno, "ENOATTR"):
             """Return the requested attribute for the given path."""
             try:
-                key = self.tree.key(path)
+                items = self.tree.items(path)
             except ValueError:
                 val = self.tree.value(path)
                 try:
@@ -464,7 +563,7 @@ class WinRegFS(fuse.Operations):
         # Value: Return all supported xattrs
         if hasattr(errno, "ENOATTR"):
             try:
-                self.tree.key(path)
+                self.tree.items(path)
             except ValueError:
                 return WinRegFS.XATTRS.keys()
             return []
