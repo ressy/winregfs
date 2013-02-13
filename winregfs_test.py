@@ -177,6 +177,8 @@ class TestRegistryTree_Combined(TestRegistryTree_Basic):
         self.value_bytes    = "3\n"
         self.value_path_bad = "/does/not/exist.RegSZ"
         self.key_path_bad2  = "/HKLM"
+        self.st_key["st_mtime"]  = 1341617967 # different time stamp here
+        self.st_value["st_size"] = len(self.value_bytes) # different size
 
     def test_key(self):
         # Haven't called load() yet
