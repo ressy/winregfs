@@ -106,30 +106,38 @@ class RegistryTree():
         self.hives["HKU"]  = {}
         self.hives["HKCC"] = {}
         if os.path.isdir(registry):
+            # With a directory, assume multiple-file usage and try loading
+            # HKLM\system.  If that works, also load whichever of the other HKLM
+            # files are present.
             self.multifile = True
-            # TODO only catch the correct exception
             hklm = self.hives["HKLM"]
+            hku = self.hives["HKU"]
             try:
-                self._load_regfile(hklm, "system")
+                self._load_regfile(hklm, "system", "SYSTEM", True)
+            # TODO only catch the correct exception
             except Exception:
                 raise ValueError("directory specified for registry, but system file couldn't be loaded.")
             self._load_regfile(hklm, "SAM")
             self._load_regfile(hklm, "SECURITY")
-            self._load_regfile(hklm, "software")
+            self._load_regfile(hklm, "software", "SOFTWARE")
+            self._load_regfile(hku, "default", ".DEFAULT")
         else:
+            # With just a file given, ignore all the hives stuff and just
+            # give an interface to the specified file.
             self.multifile = False
             self.reg = Registry.Registry(registry)
         self.__loaded = True
 
-    def _load_regfile(self, hkey, regname, strictload=False):
+    def _load_regfile(self, hkey, regname, keyname=None, strictload=False):
         """Load a single registry file into the tree."""
         path = os.path.join(self.registry, regname)
+        keyname = keyname or regname
         try:
-            hkey[regname.lower()] = Registry.Registry(path)
+            hkey[keyname] = Registry.Registry(path)
         except Exception as ex:
             if strictload:
                 raise ex
-            hkey[regname.lower()] = None
+            hkey[keyname] = None
     
     def key(self, path_to_key):
         """Return the given key object."""
@@ -402,7 +410,7 @@ class WinRegFS(fuse.Operations):
             # TODO only catch intended exceptions!
         except Exception:
             raise ValueError('"' + hivefile + '"' +
-                    " could not be loaded as a registry hivefile")
+                    " could not be loaded as a registry hivefile or directory")
         self.mountpoint = os.path.abspath(mountpoint)
         isdir = os.path.isdir(self.mountpoint)
         iswriteable = os.access(self.mountpoint, os.W_OK)
