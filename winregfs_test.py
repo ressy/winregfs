@@ -176,7 +176,8 @@ class TestRegistryTree_Combined(TestRegistryTree_Basic):
         self.value_value    = 3
         self.value_bytes    = "3\n"
         self.value_path_bad = "/does/not/exist.RegSZ"
-        self.key_path_bad2  = "/HKLM"
+        self.key_path_root  = "/"
+        self.key_path_hive  = "/HKLM"
         self.st_key["st_mtime"]  = 1341617967 # different time stamp here
         self.st_value["st_size"] = len(self.value_bytes) # different size
 
@@ -194,9 +195,12 @@ class TestRegistryTree_Combined(TestRegistryTree_Basic):
                 self.tree.key(path)
         # Can't get a key object for / or /{hivekey}
         with self.assertRaises(ValueError):
-            self.tree.key(self.key_path)
+            self.tree.key(self.key_path_root)
         with self.assertRaises(ValueError):
-            self.tree.key(self.key_path_bad2)
+            self.tree.key(self.key_path_hive)
+        # Test an actual key that should work
+        key = self.tree.key(self.key_path)
+        self.assertEqual(key.name(), self.key_name)
 
 
 if __name__ == '__main__':
