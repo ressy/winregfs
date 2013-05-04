@@ -1,11 +1,8 @@
 winregfs
 ========
 
-Mount a Windows registry file as a read-only filesystem.
-
-For the moment I should mention that I've *barely* tested this at all.  I don't
-think it could do anything awful, since python-registry is read-only, but it
-could at least do something extremely illogical :)
+Mount a Windows registry, or an individual registry file, as a read-only
+filesystem.
 
 Setup
 -----
@@ -47,6 +44,13 @@ very simple.  For example:
     drwxr-xr-x 2 jesse jesse 0 May 19  2011 Software
     drwxr-xr-x 2 jesse jesse 0 May 19  2011 System
 
+Or with a whole Windows partition:
+
+    $ ./winregfs.py registries/windows-volume/ mountpoint/
+    $ ls -l mountpoint/HKLM/SOFTWARE/Google/
+    total 0
+    drwxr-xr-x 2 jesse staff 0 Jul  2  2012 Chrome
+
 I've tried to keep it tidy so it plays nice when imported as a Python module,
 too:
 
@@ -74,7 +78,6 @@ To name a few:
  * read-only access
  * only modification times for directories (keys) are currently given
  * Certain registry data types aren't supported (more on this later)
- * Did I mention I've barely tested this?
 
 Credits
 -------
