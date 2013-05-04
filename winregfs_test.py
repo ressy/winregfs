@@ -4,8 +4,9 @@ import os.path
 import unittest
 
 loc = lambda path: os.path.join(os.path.dirname(__file__), str(path))
-REG_EXAMPLE_FILE = loc("registries/NTUSER.DAT")
-REG_EXAMPLE_DIR = loc("registries/config-example/")
+REG_EXAMPLE_FILE   = loc("registries/NTUSER.DAT")
+REG_EXAMPLE_DIR    = loc("registries/config-example/")
+REG_EXAMPLE_WINDIR = loc("registries/windows-volume/")
 
 class TestRegistryTree_Basic(unittest.TestCase):
     """Most basic RegistryTree test case."""
@@ -130,7 +131,7 @@ class TestRegistryTree_NoAppendExtensions(TestRegistryTree_Basic):
     """Test everything as above, but with append_extensions set to False."""
 
     def setUp(self):
-        super(self.__class__, self).setUp()
+        super(TestRegistryTree_NoAppendExtensions, self).setUp()
         self.value_path     = "/AppEvents/Schemes/Apps/Explorer/(default)"
         self.value_path_bad = "/does/not/exist"
         self.tree.append_extensions = False
@@ -141,7 +142,7 @@ class TestRegistryTree_NoAppendNewline(TestRegistryTree_Basic):
     """Test everything as above, but try with append_newline set to False."""
 
     def setUp(self):
-        super(self.__class__, self).setUp()
+        super(TestRegistryTree_NoAppendNewline, self).setUp()
         self.value_bytes = self.value_bytes.rstrip("\n")
         self.st_value["st_size"] = len(self.value_bytes)
         self.tree.append_newline = False
@@ -151,7 +152,7 @@ class TestRegistryTree_NoAppendAnything(TestRegistryTree_Basic):
     """Combination of both NoAppendNewline and NoAppendExtensions tests."""
 
     def setUp(self):
-        super(self.__class__, self).setUp()
+        super(TestRegistryTree_NoAppendAnything, self).setUp()
         self.value_bytes = self.value_bytes.rstrip("\n")
         self.st_value["st_size"] = len(self.value_bytes)
         self.value_path     = "/AppEvents/Schemes/Apps/Explorer/(default)"
@@ -166,9 +167,9 @@ class TestRegistryTree_Combined(TestRegistryTree_Basic):
     # HKLM, not HKEY_LOCAL_MACHINE
     # SYSTEM, not System or system
     def setUp(self):
-        super(self.__class__, self).setUp()
+        super(TestRegistryTree_Combined, self).setUp()
         self.hivefile       = REG_EXAMPLE_DIR
-        self.hivefile_bad   = "/does/not/exist.dat"
+        self.hivefile_bad   = "/does/not/exist/"
         self.key_path       = "HKLM/SYSTEM/Select/"
         self.key_name       = "Select"
         self.key_path_bad   = "/does/not/exist"
@@ -201,6 +202,14 @@ class TestRegistryTree_Combined(TestRegistryTree_Basic):
         # Test an actual key that should work
         key = self.tree.key(self.key_path)
         self.assertEqual(key.name(), self.key_name)
+
+
+class TestRegistryTree_Windir(TestRegistryTree_Combined):
+    """Test with loading multiple hivefiles from a whole Windows directory."""
+
+    def setUp(self):
+        super(TestRegistryTree_Windir, self).setUp()
+        self.hivefile = REG_EXAMPLE_WINDIR
 
 
 if __name__ == '__main__':

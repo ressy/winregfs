@@ -85,7 +85,8 @@ class RegistryTree():
         """Load the given registry (either a single file or directory).
         
         If a directory is given, it's assumed to be a %WINDIR%\system32\config
-        directory with the contents of HKLM inside."""
+        directory with the contents of HKLM inside, or a volume containing a
+        Windows installation tree with those files."""
         # Registry Key       Filesystem Location (Win7)
         # ----------------------------------------------------------------------
         # HKCR               (Composite of \Software\Classes from HKCU and HKLM)
@@ -98,18 +99,25 @@ class RegistryTree():
         # HKU\<SID>          %USERPROFILE%\NTUSER.DAT
         # HKU\<SID>_Classes  %USERPROFILE%\AppData\Local\Microsoft\Windows\UsrClass.dat
         # HKCC               (Generated dynamically at runtime)
-        self.registry = registry
         self.hives= {}
         self.hives["HKCR"] = {}
         self.hives["HKCU"] = {}
         self.hives["HKLM"] = {}
         self.hives["HKU"]  = {}
         self.hives["HKCC"] = {}
+        self.configdir = None
+        self.hivefile = None
         if os.path.isdir(registry):
             # With a directory, assume multiple-file usage and try loading
-            # HKLM\system.  If that works, also load whichever of the other HKLM
-            # files are present.
+            # HKLM\system, either directly from that location or from
+            # beneath Windows\System32\config.  If one of those works, also
+            # load whichever of the other HKLM files are present.
             self.multifile = True
+            testdir = os.path.join(registry, "Windows/System32/config")
+            if os.path.isdir(testdir):
+                self.configdir = testdir
+            elif os.path.isdir(registry):
+                self.configdir = registry
             hklm = self.hives["HKLM"]
             hku = self.hives["HKU"]
             try:
@@ -125,12 +133,12 @@ class RegistryTree():
             # With just a file given, ignore all the hives stuff and just
             # give an interface to the specified file.
             self.multifile = False
-            self.reg = Registry.Registry(registry)
+            self.hivefile = Registry.Registry(registry)
         self.__loaded = True
 
     def _load_regfile(self, hkey, regname, keyname=None, strictload=False):
         """Load a single registry file into the tree."""
-        path = os.path.join(self.registry, regname)
+        path = os.path.join(self.configdir, regname)
         keyname = keyname or regname
         try:
             hkey[keyname] = Registry.Registry(path)
@@ -187,7 +195,7 @@ class RegistryTree():
             except KeyError:
                 raise ValueError("specified item does not exist.")
         else:
-            reg = self.reg
+            reg = self.hivefile
         return reg, path
 
     def bytestr(self, path_to_value):
@@ -285,7 +293,7 @@ class RegistryTree():
                 except KeyError:
                     raise ValueError("specified key does not exist.")
             return self.hives.keys()
-        return self._items_for_reg(self.reg, path_to_key)
+        return self._items_for_reg(self.hivefile, path_to_key)
 
     def _items_for_reg(self, reg, path_to_key):
         try:
