@@ -46,8 +46,8 @@ very simple.  For example:
 
 Or with a whole Windows partition:
 
-    $ ./winregfs.py registries/windows-volume/ mountpoint/
-    $ ls -l mountpoint/HKLM/SOFTWARE/Google/
+    $ ./winregfs.py /mnt/windows/ registry/
+    $ ls -l registry/HKLM/SOFTWARE/Google/
     total 0
     drwxr-xr-x 2 jesse staff 0 Jul  2  2012 Chrome
 
