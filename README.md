@@ -5,7 +5,7 @@ Mount a Windows registry, or an individual registry file, as a read-only
 filesystem.  This can run on just about any OS that can handle both Python and
 FUSE, which in practice means most things except Windows itself.
 
-See [here](http://www.mangolad.com/winregfs) for standalone single-file releases
+See [here](http://www.ressy.us/winregfs) for standalone single-file releases
 (currently just 64-bit Linux, hopefully more to come later).
 
 Setup
